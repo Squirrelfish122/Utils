@@ -6,7 +6,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.0-alpha14'
+        classpath 'com.android.tools.build:gradle:3.1.2'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -22,4 +22,26 @@ allprojects {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+
+ext {
+    compileSdkVersion = 27
+    minSdkVersion = 16
+    targetSdkVersion = 27
+
+    supportLibraryVersion = '27.1.1'
+    junitVersioin = '4.12'
+    espressoVersioin = '2.2.2'
+
+
+    rxjava2Version = '2.1.0'
+    retrofit2Version = '2.3.0'
+    adapterRxjava2Version = '2.3.0'
+    converterGsonVersion = '2.3.0'
+    loggingInterceptorVersion = '3.8.0'
+    rxandroidVersion = '2.0.2'
+    stethoVersion = '1.5.0'
+    stethoOkhttp3Version = '1.5.0'
+    gsonVersion = '2.8.0'
+    guavaVersion = '23.0-android'
 }
