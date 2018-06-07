@@ -1,4 +1,4 @@
-package com.hyman.zhh.utils.utils;
+package com.hyman.zhh.utils.log;
 
 import android.util.Log;
 

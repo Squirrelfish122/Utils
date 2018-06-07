@@ -1,6 +1,6 @@
 package com.hyman.zhh.utils.network;
 
-import com.hyman.zhh.utils.utils.PrintLog;
+import com.hyman.zhh.utils.log.PrintLog;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;

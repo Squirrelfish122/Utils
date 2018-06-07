@@ -1,6 +1,7 @@
-package com.hyman.zhh.utils.utils;
+package com.hyman.zhh.utils.network;
 
 
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import java.net.URI;
@@ -8,9 +9,9 @@ import java.util.Map;
 
 public class UrlUtils {
 
-    public static String urlSkipParams(String url, Map<String, String> params) {
+    public static String urlSkipParams(@NonNull String url, @NonNull Map<String, String> params) {
         String _url = url;
-        if (TextUtils.isEmpty(url) || params == null)
+        if (TextUtils.isEmpty(url))
             return url;
         try {
             URI uri = URI.create(url);

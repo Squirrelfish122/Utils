@@ -5,7 +5,6 @@ import android.support.annotation.NonNull;
 import com.facebook.stetho.okhttp3.StethoInterceptor;
 import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
-import com.hyman.zhh.utils.utils.UrlUtils;
 
 import java.io.File;
 import java.lang.reflect.ParameterizedType;

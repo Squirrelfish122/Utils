@@ -4,6 +4,8 @@ import android.graphics.Paint;
 import android.text.TextUtils;
 import android.widget.TextView;
 
+import com.hyman.zhh.utils.log.PrintLog;
+
 
 /**
  * common utils
