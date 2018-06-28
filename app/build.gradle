@@ -36,4 +36,5 @@ dependencies {
     implementation "com.facebook.stetho:stetho-okhttp3:${rootProject.stethoOkhttp3Version}"
     implementation "com.google.code.gson:gson:${rootProject.gsonVersion}"
     implementation "com.google.guava:guava:${rootProject.guavaVersion}"
+    implementation "com.google.zxing:core:${rootProject.zxingVersion}"
 }
