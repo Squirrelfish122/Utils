@@ -1,9 +1,14 @@
 package com.hyman.zhh.utils.io;
 
+import android.text.TextUtils;
+
+import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 public class IOUtils {
 
@@ -102,4 +107,43 @@ public class IOUtils {
             }
         }
     }
+
+
+    private static final int DOWNLOAD_FILE_BUFFER_SIZE = 8192;  // 8KB
+    public static boolean writeFile(InputStream inputStream, String path) {
+        if (inputStream == null || TextUtils.isEmpty(path)) {
+            return false;
+        }
+
+        File file = new File(path);
+        File parentFile = file.getParentFile();
+        if (!parentFile.exists()) {
+            parentFile.mkdirs();
+        }
+        if (file.exists()) {
+            file.delete();
+        }
+
+        BufferedOutputStream bufferedOutputStream = null;
+        byte[] buffer = new byte[DOWNLOAD_FILE_BUFFER_SIZE];
+        int len;
+        try {
+            bufferedOutputStream = new BufferedOutputStream((new FileOutputStream(file)));
+            while ((len = inputStream.read(buffer)) != -1) {
+                bufferedOutputStream.write(buffer, 0, len);
+            }
+            bufferedOutputStream.flush();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            close(inputStream);
+            close(bufferedOutputStream);
+        }
+        return true;
+    }
+
 }

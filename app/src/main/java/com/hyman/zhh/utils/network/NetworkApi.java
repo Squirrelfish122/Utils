@@ -3,6 +3,7 @@ package com.hyman.zhh.utils.network;
 import android.support.annotation.NonNull;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,4 +35,7 @@ public interface NetworkApi {
 
     void uploadFileForString(@NonNull String url, @NonNull String fileDescription, @NonNull File file, Map<String, String> params, NetworkListener<String> listener);
 
+    void uploadFile(String url, Map<String, String> params, List<File> files, NetworkListener<Boolean> listener);
+
+    void downloadFile(String url, String savePath, NetworkListener<DownloadResult> listener);
 }

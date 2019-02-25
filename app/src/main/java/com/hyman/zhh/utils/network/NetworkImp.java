@@ -1,19 +1,27 @@
 package com.hyman.zhh.utils.network;
 
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
 import com.facebook.stetho.okhttp3.StethoInterceptor;
 import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
+import com.hyman.zhh.utils.io.IOUtils;
+import com.hyman.zhh.utils.utils.LogUtils;
 
 import java.io.File;
+import java.io.InputStream;
 import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
+import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
@@ -32,6 +40,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  */
 public class NetworkImp implements NetworkApi {
 
+    private static final String TAG = "NetworkImp";
     private NetworkService mNetworkService;
 
     private static NetworkImp INSTANCE;
@@ -709,5 +718,163 @@ public class NetworkImp implements NetworkApi {
             params.putAll(map);
         }
         return params.size() > 0;
+    }
+
+    private Observable<ResponseBody> getUploadFileObservable(String url, boolean hasParams,
+                                                             Map<String, String> map, List<File> files) {
+        Observable<ResponseBody> observable;
+        if (hasParams) {
+            observable = mNetworkService.uploadFile(url, map, convert2PartList(files));
+        } else {
+            observable = mNetworkService.uploadFile(url, convert2PartList(files));
+        }
+        return observable;
+    }
+
+    private List<MultipartBody.Part> convert2PartList(List<File> files){
+        ArrayList<MultipartBody.Part> parts = new ArrayList<>();
+        for (File file : files) {
+            parts.add(convertFile2Part(file));
+        }
+        return parts;
+    }
+
+    private MultipartBody.Part convertFile2Part(File file) {
+        RequestBody requestBody = RequestBody.create(MEDIA_TYPE_MULTIPART_FORM_DATA, file);
+        return MultipartBody.Part.createFormData("file", file.getName(), requestBody);
+    }
+
+    @Override
+    public void uploadFile(String url, Map<String, String> params, List<File> files,
+                           final NetworkListener<Boolean> listener) {
+        if (TextUtils.isEmpty(url) || files == null || files.size() <= 0) {
+            if (listener != null) {
+                listener.onFail("url is empty or files is null or size <= 0");
+            }
+            return;
+        }
+
+        HashMap<String, String> map = new HashMap<>();
+        url = UrlUtils.urlSkipParams(url, map);
+
+        if (params == null) {
+            params = new HashMap<>();
+        }
+
+        boolean hasParams = checkHasParams(params, map);
+        Observable<ResponseBody> observable = getUploadFileObservable(url, hasParams, params, files);
+        observable.subscribeOn(Schedulers.io())
+                .map(new Function<ResponseBody, Boolean>() {
+                    @Override
+                    public Boolean apply(ResponseBody responseBody) throws Exception {
+                        return true;
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new DisposableObserver<Boolean>() {
+                    @Override
+                    public void onNext(Boolean t) {
+                        if (listener != null && !listener.isCancel()) {
+                            listener.onSuccess(t);
+                        }
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        if (listener != null && !listener.isCancel()) {
+                            listener.onFail(e.getMessage());
+                        }
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+    }
+
+    @Override
+    public void downloadFile(String url, final String savePath, final NetworkListener<DownloadResult> listener) {
+        if (listener == null) {
+            throw new IllegalArgumentException("listener can't be null");
+        }
+
+        if (TextUtils.isEmpty(url)) {
+            throw new IllegalArgumentException("url is null");
+        }
+
+        if (TextUtils.isEmpty(savePath)) {
+            throw new IllegalArgumentException("save path is null");
+        }
+        LogUtils.d(TAG, "start");
+        final long start = System.currentTimeMillis();
+        Observable<ResponseBody> observable;
+        try {
+            observable = mNetworkService.download(url);
+        } catch (Exception e) {
+            e.printStackTrace();
+            listener.onSuccess(DownloadResult.getFailureResult(DownloadResult.REASON_REQUEST_FAILED));
+            return;
+        }
+
+        observable.subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .map(new Function<ResponseBody, DownloadResult>() {
+                    @Override
+                    public DownloadResult apply(ResponseBody body) throws Exception {
+                        LogUtils.d(TAG, "request success");
+                        if (body == null) {
+                            return DownloadResult.getFailureResult(DownloadResult.REASON_BODY_IS_NULL);
+                        }
+
+                        long contentLength = body.contentLength();
+                        if (contentLength <= 0) {
+                            return DownloadResult.getFailureResult(DownloadResult.REASON_BODY_LENGTH_IS_ZERO);
+                        }
+
+                        long startSave = System.currentTimeMillis();
+                        LogUtils.d(TAG, String.format("request info, spend time %s ms, content length = %s",
+                                (startSave - start), contentLength));
+
+                        InputStream inputStream = body.byteStream();
+                        if (!IOUtils.writeFile(inputStream, savePath)) {
+                            return DownloadResult.getFailureResult(DownloadResult.REASON_SAVE_FILE_FAILED);
+                        }
+
+                        long end = System.currentTimeMillis();
+                        LogUtils.d(TAG, String.format("save file, spend time %s ms", (end - startSave)));
+                        long spendTime = end - start;   // ms
+                        LogUtils.d(TAG, String.format("total spend time %s ms", spendTime));
+
+                        float downloadSpeed = contentLength * 1.0f / spendTime; // B/ms
+                        downloadSpeed = downloadSpeed * 1000 / 1024; // B/ms -> KB/s
+                        return DownloadResult.getSuccessResult(downloadSpeed);
+                    }
+                })
+                .subscribe(new Observer<DownloadResult>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onNext(DownloadResult result) {
+                        if (!listener.isCancel()) {
+                            listener.onSuccess(result);
+                        }
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        if (!listener.isCancel()) {
+                            listener.onFail(e.getMessage());
+                        }
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
     }
 }

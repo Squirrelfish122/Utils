@@ -1,5 +1,6 @@
 package com.hyman.zhh.utils.network;
 
+import java.util.List;
 import java.util.Map;
 
 import io.reactivex.Observable;
@@ -15,6 +16,7 @@ import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.Part;
 import retrofit2.http.QueryMap;
+import retrofit2.http.Streaming;
 import retrofit2.http.Url;
 
 /**
@@ -70,5 +72,17 @@ public interface NetworkService {
     Observable<ResponseBody> uploadFile(@Url String url, @QueryMap Map<String, String> params, @Part("description") RequestBody description,
                                         @Part MultipartBody.Part part);
 
+    @Multipart
+    @POST
+    Observable<ResponseBody> uploadFile(@Url String url, @Part List<MultipartBody.Part> parts);
+
+    @Multipart
+    @POST
+    Observable<ResponseBody> uploadFile(@Url String url, @QueryMap Map<String, String> params,
+                                        @Part List<MultipartBody.Part> parts);
+
+    @Streaming
+    @GET
+    Observable<ResponseBody> download(@Url String url);
 
 }
